@@ -47,13 +47,10 @@ app = FastAPI()
 fake = Faker('ru_Ru')
 
 
-@app.on_event("startup")
-async def startup():
+@app.router.lifespan()
+async def lifespan():
     await database.connect()
-
-
-@app.on_event("shutdown")
-async def shutdown():
+    yield
     await database.disconnect()
 
 
