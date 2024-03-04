@@ -15,6 +15,7 @@ from typing import List
 from models import UserT2, UserInT2
 from faker import Faker
 from datetime import datetime
+from contextlib import asynccontextmanager
 from pathlib import Path as PathLib
 
 PathLib(PathLib.cwd() / 'db').mkdir(exist_ok=True)
@@ -36,14 +37,18 @@ users = sqlalchemy.Table(
 engine = sqlalchemy.create_engine(DATABASE_URL)
 metadata.create_all(engine)
 fake = Faker("ru_RU")
-app = FastAPI()
 
 
-@app.router.lifespan()
-async def lifespan():
+@asynccontextmanager
+async def lifespan(app: FastAPI):
     await database.connect()
+    print("Server connected")
     yield
     await database.disconnect()
+    print("Server disconnected")
+
+
+app = FastAPI(lifespan=lifespan)
 
 
 @app.post("/users/", response_model=UserT2)

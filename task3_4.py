@@ -24,6 +24,7 @@ from models import TaskT3, TaskInT3
 import uvicorn
 from faker import Faker
 from pathlib import Path as PathLib
+from contextlib import asynccontextmanager
 from random import choice
 
 PathLib(PathLib.cwd() / 'db').mkdir(exist_ok=True)
@@ -42,16 +43,19 @@ tasks = sqlalchemy.Table(
 )
 engine = sqlalchemy.create_engine(DATABASE_URL)
 metadata.create_all(engine)
-
-app = FastAPI()
 fake = Faker('ru_Ru')
 
 
-@app.router.lifespan()
-async def lifespan():
+@asynccontextmanager
+async def lifespan(app: FastAPI):
     await database.connect()
+    print("Server connected")
     yield
     await database.disconnect()
+    print("Server disconnected")
+
+
+app = FastAPI(lifespan=lifespan)
 
 
 @app.post("/tasks/", response_model=TaskT3)
